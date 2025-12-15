@@ -17,6 +17,9 @@
     "test": "echo \"No tests configured\"",
     "lint": "echo \"No lint configured\""
   },
+  "devDependencies": {
+    "@companion-module/tools": "^2.4.2"
+  },
   "engines": {
     "node": ">=18"
   },
