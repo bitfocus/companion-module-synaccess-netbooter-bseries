@@ -34,7 +34,6 @@ by parsing the `$A5` status response.
 
 - **Newer Synaccess PDUs using RESTful APIs**
 - Non-B-Series devices
-- HTTPS
 
 A separate Companion module is necessary for REST-based Synaccess devices.
 
