@@ -1,6 +1,15 @@
 /**
- * Common field helpers for this module.
- * Keep these small and predictable so config.js stays clean.
+ * fields.js
+ *
+ * Common field helper factories for the module configuration UI.
+ * Keeps config definitions concise and reusable by encapsulating default
+ * shaping for text, number, and static text fields.
+ */
+
+/**
+ * Build a text input field definition.
+ * @param {object} opts
+ * @returns {import('@companion-module/base').SomeCompanionConfigField}
  */
 
 export function textInput(opts) {
@@ -33,6 +42,11 @@ export function textInput(opts) {
 	}
 }
 
+/**
+ * Build a numeric input field definition with validation.
+ * @param {object} opts
+ * @returns {import('@companion-module/base').SomeCompanionConfigField}
+ */
 export function numberInput(opts) {
 	const {
 		id,
@@ -74,6 +88,10 @@ export function staticText({
 	width = 12,
 	value,
 }) {
+	/**
+	 * Static text description block.
+	 * @type {import('@companion-module/base').SomeCompanionConfigField}
+	 */
 	return {
 		type: 'static-text',
 		id,

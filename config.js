@@ -1,6 +1,28 @@
-// config.js
+/**
+ * config.js
+ *
+ * Configuration schema for the Synaccess netBooter B Series module.
+ * Defines the Companion UI fields surfaced to operators for connectivity
+ * and pacing parameters.
+ */
 import { staticText, textInput, numberInput } from './fields.js'
 
+/**
+ * @typedef {Object} ConfigShape
+ * @property {string} host
+ * @property {string} username
+ * @property {string} password
+ * @property {number} pollIntervalMs
+ * @property {number} controlPaceMs
+ * @property {number} statusTimeoutMs
+ * @property {number} controlTimeoutMs
+ * @property {number} rebootTimeoutMs
+ */
+
+/**
+ * Companion configuration field definitions.
+ * @type {import('@companion-module/base').SomeCompanionConfigField[]}
+ */
 export const configFields = [
 	staticText({
 		id: 'info',

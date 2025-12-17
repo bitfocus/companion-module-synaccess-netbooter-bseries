@@ -1,4 +1,21 @@
-// main.js
+/**
+ * main.js
+ *
+ * Entry point that wires the Companion lifecycle to Synaccess netBooter B Series PDUs.
+ * Coordinates configuration, actions, feedbacks, variables, and polling so the
+ * module remains cohesive and observable during runtime.
+ * File index:
+ * - actions.js: Companion actions for outlet control and refresh.
+ * - choices.js: Shared dropdown choice builders for outlets and on/off.
+ * - config.js: Configuration field definitions.
+ * - feedbacks.js: Visual feedback definitions driven by device status.
+ * - fields.js: Field helper factories for configuration inputs.
+ * - http.js: Serialized HTTP client for device commands.
+ * - presets.js: Button presets grouped by outlet behavior.
+ * - upgrade.js: Companion upgrade scripts and defaults.
+ * - utils.js: Command parsing helpers and validation utilities.
+ * - variables.js: Variable definitions and state updates.
+ */
 import { InstanceBase, InstanceStatus, runEntrypoint } from '@companion-module/base'
 
 import { configFields } from './config.js'
@@ -16,7 +33,10 @@ import { initFeedbacks } from './feedbacks.js'
  * Companion module instance for Synaccess netBooter B Series PDUs.
  * Handles lifecycle wiring, polling, and request serialization.
  */
-class SynaccessNetBooterBSeriesInstance extends InstanceBase {
+export class SynaccessNetBooterBSeriesInstance extends InstanceBase {
+	/**
+	 * @param {import('@companion-module/base').InternalInstanceAPI} internal
+	 */
 	constructor(internal) {
 		super(internal)
 
@@ -33,6 +53,7 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 		// Per-outlet reboot locks (NOT global)
 		this._rebootLocks = new Set()
 		this._rebootInProgress = 0
+		this._hasLoggedPollSuccess = false
 
 		// HTTP client (serialized, keep-alive)
 		this.http = new SynaccessHttpClient(this)
@@ -42,6 +63,10 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 	/* Lifecycle                                                             */
 	/* --------------------------------------------------------------------- */
 
+	/**
+	 * Initialize the module with user configuration.
+	 * @param {import('./config.js').ConfigShape} config
+	 */
 	async init(config) {
 		this.config = config
 
@@ -55,20 +80,33 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 
 		this.updateStatus(InstanceStatus.Ok)
 		setLastError(this, '')
+		this.log('info', 'Instance initialized; starting status polling')
 		this.startPolling()
 	}
 
+	/**
+	 * Clean up resources on module unload.
+	 */
 	async destroy() {
+		this.log('info', 'Instance destroyed; stopping polling and HTTP client')
 		this.stopPolling()
 		this.http.destroy()
 	}
 
+	/**
+	 * Provide Companion configuration field definitions.
+	 */
 	getConfigFields() {
 		return configFields
 	}
 
+	/**
+	 * React to configuration updates from the UI.
+	 * @param {import('./config.js').ConfigShape} config
+	 */
 	async configUpdated(config) {
 		this.config = config
+		this.log('info', 'Configuration updated; restarting polling with new settings')
 		this.stopPolling()
 
 		this.http.resetAgent()
@@ -86,10 +124,16 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 	/* Definitions                                                            */
 	/* --------------------------------------------------------------------- */
 
+	/**
+	 * Register Companion actions using the latest device context.
+	 */
 	initActions() {
 		this.setActionDefinitions(getActionDefinitions(this))
 	}
 
+	/**
+	 * Register Companion presets using the latest device context.
+	 */
 	initPresets() {
 		const { presets, presetGroups } = getPresets(this)
 		this.setPresetDefinitions(presets, presetGroups)
@@ -99,12 +143,16 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 	/* Polling                                                               */
 	/* --------------------------------------------------------------------- */
 
+	/**
+	 * Begin periodic status polling if configured with a valid interval.
+	 */
 	startPolling() {
 		const intervalMs = Number(this.config.pollIntervalMs) || 2000
 		if (intervalMs <= 0) return
 
 		// Defensive: avoid multiple timers if startPolling() gets called twice
 		this.stopPolling()
+		this.log('info', `Starting status polling every ${intervalMs} ms`)
 
 		this._pollTimer = setInterval(() => {
 			// Do not poll during reboot sequences (OFF->delay->ON)
@@ -127,10 +175,14 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 		}, intervalMs)
 	}
 
+	/**
+	 * Stop periodic status polling.
+	 */
 	stopPolling() {
 		if (this._pollTimer) {
 			clearInterval(this._pollTimer)
 			this._pollTimer = undefined
+			this.log('info', 'Stopped status polling')
 		}
 	}
 
@@ -156,10 +208,18 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 	/* HTTP + status                                                         */
 	/* --------------------------------------------------------------------- */
 
+	/**
+	 * Send a GET command using the module HTTP client.
+	 * @param {string} cmd
+	 * @param {{ timeoutMs?: number }} [options]
+	 */
 	async _httpGet(cmd, { timeoutMs } = {}) {
 		return this.http.get(cmd, { timeoutMs })
 	}
 
+	/**
+	 * Poll device status and update Companion state.
+	 */
 	async refreshStatus() {
 		if (this._isPolling) return
 		this._isPolling = true
@@ -189,11 +249,22 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 			updateVariablesFromState(this)
 			this.checkFeedbacks()
 
+			// Info log once on startup or when a change is detected; debug otherwise to reduce noise
+			const summary = `ports=${status.portCount} amps=${status.currentAmps ?? 'n/a'} tempC=${status.tempC ?? 'n/a'}`
+			if (!this._hasLoggedPollSuccess || oldPortCount !== this.portCount) {
+				this.log('info', `Status poll succeeded: ${summary}`)
+				this._hasLoggedPollSuccess = true
+			} else {
+				this.log('debug', `Status poll succeeded: ${summary}`)
+			}
+
 			setLastError(this, '')
 			this.updateStatus(InstanceStatus.Ok, 'Poll succeeded')
 		} catch (e) {
 			const msg = e?.message ? String(e.message) : String(e)
 			setLastError(this, msg)
+			this.log('error', `Status poll failed: ${msg}`)
+			this._hasLoggedPollSuccess = false
 			this.updateStatus(InstanceStatus.ConnectionFailure, msg)
 			this.checkFeedbacks()
 		} finally {
@@ -203,3 +274,21 @@ class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 }
 
 runEntrypoint(SynaccessNetBooterBSeriesInstance, upgradeScripts)
+
+/**
+ * Type alias describing the instance fields accessed across the module.
+ * @typedef {SynaccessNetBooterBSeriesInstance & {
+ *   config: import('./config.js').ConfigShape,
+ *   portCount: number,
+ *   outletState: boolean[],
+ *   currentAmps?: number,
+ *   tempC?: number,
+ *   lastError?: string,
+ *   http: import('./http.js').SynaccessHttpClient,
+ *   _rebootInProgress: number,
+ *   _hasLoggedPollSuccess: boolean,
+ *   _lockReboot: (outlet: number) => boolean,
+ *   _unlockReboot: (outlet: number) => void,
+ *   _needsStatusRefresh?: boolean
+ * }} SynaccessInstanceAugmented
+ */

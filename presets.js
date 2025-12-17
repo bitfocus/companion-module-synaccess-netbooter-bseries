@@ -1,4 +1,10 @@
-// presets.js
+/**
+ * presets.js
+ *
+ * Button presets for common outlet operations on the Synaccess module.
+ * Supplies Companion-ready presets for per-outlet and global actions, with
+ * styling aligned to feedback indicators.
+ */
 import { combineRgb } from '@companion-module/base'
 
 function portCountFromInstance(instance) {
@@ -7,6 +13,11 @@ function portCountFromInstance(instance) {
 	return 5
 }
 
+/**
+ * Build Companion presets using the detected port count.
+ * @param {import('@companion-module/base').InstanceBase} instance
+ * @returns {{ presets: Record<string, import('@companion-module/base').CompanionPresetDefinition>, presetGroups: { name: string }[] }}
+ */
 export function getPresets(instance) {
 	const ports = portCountFromInstance(instance)
 
