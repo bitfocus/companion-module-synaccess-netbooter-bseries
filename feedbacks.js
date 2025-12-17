@@ -60,9 +60,9 @@ export function initFeedbacks(instance) {
 		},
 
 		outlet_rebooting: {
-			type: 'boolean',
+			type: 'advanced',
 			name: 'Outlet is rebooting',
-			description: 'True while the selected outlet is mid-reboot (OFF->delay->ON)',
+			description: 'Visual indicator with brightness pulsing while outlet is mid-reboot (OFF->delay->ON)',
 			options: [
 				{
 					type: 'dropdown',
@@ -72,15 +72,26 @@ export function initFeedbacks(instance) {
 					choices: outletChoices(instance.portCount),
 				},
 			],
-			defaultStyle: {
-				bgcolor: combineRgb(140, 0, 0),
-				color: combineRgb(255, 255, 255),
-				animation: { style: 'blink', speed: 'slow' },
-			},
 			callback: (feedback) => {
 				const outlet = Number(feedback.options.outlet)
-				if (!(outlet >= 1 && outlet <= instance.portCount)) return false
-				return instance._isOutletRebooting?.(outlet) ?? false
+				if (!(outlet >= 1 && outlet <= instance.portCount)) return {}
+
+				if (!instance._isOutletRebooting?.(outlet)) {
+					return {} // Not rebooting, no style override
+				}
+
+				// Brightness pulse: alternate between bright and dim red
+				if (instance._blinkPhase) {
+					return {
+						bgcolor: combineRgb(200, 0, 0), // Bright red
+						color: combineRgb(255, 255, 255),
+					}
+				} else {
+					return {
+						bgcolor: combineRgb(80, 0, 0), // Dark red
+						color: combineRgb(180, 180, 180),
+					}
+				}
 			},
 		},
 

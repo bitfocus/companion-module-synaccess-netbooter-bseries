@@ -14,7 +14,6 @@ const COLOR_TEXT = combineRgb(255, 255, 255)
 const COLOR_BASE = combineRgb(40, 40, 40)
 const COLOR_REBOOT = combineRgb(110, 60, 0)
 const COLOR_STATUS = combineRgb(30, 30, 30)
-const REBOOT_ANIMATION = { style: 'blink', speed: 'slow' }
 
 function portCountFromInstance(instance) {
 	const n = Number(instance?.portCount)
@@ -100,18 +99,11 @@ export function getPresets(instance) {
 			},
 			steps: [{ down: [], up: [] }],
 			feedbacks: [
-				{
-					feedbackId: 'outlet_rebooting',
-					options: { outlet },
-					style: {
-						text: `P${outlet}\nREBOOT`,
-						size: '14',
-						color: COLOR_TEXT,
-						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
-					},
-				},
+				// Brightness pulsing provided by advanced feedback
+				{ feedbackId: 'outlet_rebooting', options: { outlet } },
+				// ON -> green highlight
 				{ feedbackId: 'outlet_on', options: { outlet }, style: { bgcolor: COLOR_ON } },
+				// OFF -> red highlight
 				{ feedbackId: 'outlet_off', options: { outlet }, style: { bgcolor: COLOR_OFF } },
 			],
 		}
@@ -129,17 +121,8 @@ export function getPresets(instance) {
 			},
 			steps: [{ down: [{ actionId: 'set_outlet', options: { outlet, state: 1 } }], up: [] }],
 			feedbacks: [
-				{
-					feedbackId: 'outlet_rebooting',
-					options: { outlet },
-					style: {
-						text: `P${outlet}\nREBOOT`,
-						size: '14',
-						color: COLOR_TEXT,
-						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
-					},
-				},
+				// Brightness pulsing provided by advanced feedback
+				{ feedbackId: 'outlet_rebooting', options: { outlet } },
 				// ON -> green highlight
 				{ feedbackId: 'outlet_on', options: { outlet }, style: { bgcolor: COLOR_ON } },
 				// OFF -> red highlight
@@ -160,17 +143,8 @@ export function getPresets(instance) {
 			},
 			steps: [{ down: [{ actionId: 'set_outlet', options: { outlet, state: 0 } }], up: [] }],
 			feedbacks: [
-				{
-					feedbackId: 'outlet_rebooting',
-					options: { outlet },
-					style: {
-						text: `P${outlet}\nREBOOT`,
-						size: '14',
-						color: COLOR_TEXT,
-						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
-					},
-				},
+				// Brightness pulsing provided by advanced feedback
+				{ feedbackId: 'outlet_rebooting', options: { outlet } },
 				// OFF -> red highlight
 				{ feedbackId: 'outlet_off', options: { outlet }, style: { bgcolor: COLOR_OFF } },
 				// ON -> green highlight
@@ -191,17 +165,8 @@ export function getPresets(instance) {
 			},
 			steps: [{ down: [{ actionId: 'toggle_outlet', options: { outlet } }], up: [] }],
 			feedbacks: [
-				{
-					feedbackId: 'outlet_rebooting',
-					options: { outlet },
-					style: {
-						text: `P${outlet}\nREBOOT`,
-						size: '14',
-						color: COLOR_TEXT,
-						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
-					},
-				},
+				// Brightness pulsing provided by advanced feedback
+				{ feedbackId: 'outlet_rebooting', options: { outlet } },
 				// OFF -> red highlight
 				{ feedbackId: 'outlet_off', options: { outlet }, style: { bgcolor: COLOR_OFF } },
 				// ON -> green highlight
@@ -222,17 +187,8 @@ export function getPresets(instance) {
 			},
 			steps: [{ down: [{ actionId: 'reboot_outlet', options: { outlet, delayMs: 5000 } }], up: [] }],
 			feedbacks: [
-				{
-					feedbackId: 'outlet_rebooting',
-					options: { outlet },
-					style: {
-						text: `P${outlet}\nREBOOT`,
-						size: '14',
-						color: COLOR_TEXT,
-						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
-					},
-				},
+				// Brightness pulsing provided by advanced feedback
+				{ feedbackId: 'outlet_rebooting', options: { outlet } },
 			],
 		}
 	}
