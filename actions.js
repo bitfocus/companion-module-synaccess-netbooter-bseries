@@ -92,6 +92,12 @@ export function getActionDefinitions(instance) {
 				try {
 					// OFF (this is the only awaited part)
 					assertActionOk(await instance.http.get(`$A3 ${outlet} 0`, { timeoutMs: rebootTimeoutMs }), 'Reboot OFF')
+
+					// Keep feedbacks responsive while polling is paused during reboot
+					if (Array.isArray(instance.outletState) && outlet >= 1 && outlet <= instance.portCount) {
+						instance.outletState[outlet - 1] = false
+						instance.checkFeedbacks('outlet_on', 'outlet_off')
+					}
 				} catch (e) {
 					instance.log('error', `Reboot OFF failed for outlet ${outlet}: ${e?.message || e}`)
 					instance._rebootInProgress--
@@ -108,6 +114,10 @@ export function getActionDefinitions(instance) {
 						await new Promise((r) => setTimeout(r, 25))
 
 						assertActionOk(await instance.http.get(`$A3 ${outlet} 1`, { timeoutMs: rebootTimeoutMs }), 'Reboot ON')
+						if (Array.isArray(instance.outletState) && outlet >= 1 && outlet <= instance.portCount) {
+							instance.outletState[outlet - 1] = true
+							instance.checkFeedbacks('outlet_on', 'outlet_off')
+						}
 						instance._needsStatusRefresh = true
 					} catch (e) {
 						instance.log('error', `Reboot ON failed for outlet ${outlet}: ${e?.message || e}`)
