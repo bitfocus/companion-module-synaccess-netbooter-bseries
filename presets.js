@@ -14,7 +14,6 @@ const COLOR_TEXT = combineRgb(255, 255, 255)
 const COLOR_BASE = combineRgb(40, 40, 40)
 const COLOR_REBOOT = combineRgb(110, 60, 0)
 const COLOR_STATUS = combineRgb(30, 30, 30)
-const REBOOT_ANIMATION = { style: 'blink', speed: 'slow' }
 
 function portCountFromInstance(instance) {
 	const n = Number(instance?.portCount)
@@ -108,7 +107,6 @@ export function getPresets(instance) {
 						size: '14',
 						color: COLOR_TEXT,
 						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
 					},
 				},
 				{ feedbackId: 'outlet_on', options: { outlet }, style: { bgcolor: COLOR_ON } },
@@ -137,7 +135,6 @@ export function getPresets(instance) {
 						size: '14',
 						color: COLOR_TEXT,
 						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
 					},
 				},
 				// ON -> green highlight
@@ -168,7 +165,6 @@ export function getPresets(instance) {
 						size: '14',
 						color: COLOR_TEXT,
 						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
 					},
 				},
 				// OFF -> red highlight
@@ -199,7 +195,6 @@ export function getPresets(instance) {
 						size: '14',
 						color: COLOR_TEXT,
 						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
 					},
 				},
 				// OFF -> red highlight
@@ -230,7 +225,6 @@ export function getPresets(instance) {
 						size: '14',
 						color: COLOR_TEXT,
 						bgcolor: COLOR_OFF,
-						animation: REBOOT_ANIMATION,
 					},
 				},
 			],

@@ -34,6 +34,12 @@ const require = createRequire(import.meta.url)
 const { version: MODULE_VERSION } = require('./package.json')
 
 /**
+ * Blink interval (ms) for visual feedback during outlet reboot sequences.
+ * Adjust this constant to change blink speed globally (not user-configurable).
+ */
+const REBOOT_BLINK_INTERVAL_MS = 500
+
+/**
  * Companion module instance for Synaccess netBooter B Series PDUs.
  * Handles lifecycle wiring, polling, and request serialization.
  */
@@ -60,6 +66,10 @@ export class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 		this._rebootingOutlets = new Set()
 		this._hasLoggedPollSuccess = false
 		this._configErrorLogged = false
+
+		// Blink timer for reboot visual feedback
+		this._blinkTimer = undefined
+		this._blinkPhase = false
 
 		// HTTP client (serialized, keep-alive)
 		this.http = new SynaccessHttpClient(this)
@@ -102,6 +112,7 @@ export class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 	async destroy() {
 		this.log('info', 'Instance destroyed; stopping polling and HTTP client')
 		this.stopPolling()
+		this._stopBlinkTimer()
 		this.http.destroy()
 	}
 
@@ -229,12 +240,18 @@ export class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 		if (this._rebootLocks.has(outlet)) return false
 		this._rebootLocks.add(outlet)
 		this._setOutletRebooting(outlet, true)
+		this._startBlinkTimer()
 		return true
 	}
 
 	_unlockReboot(outlet) {
 		this._rebootLocks.delete(outlet)
 		this._setOutletRebooting(outlet, false)
+
+		// Stop blink timer when no reboots are active
+		if (this._rebootingOutlets.size === 0) {
+			this._stopBlinkTimer()
+		}
 	}
 
 	_isOutletRebooting(outlet) {
@@ -247,6 +264,32 @@ export class SynaccessNetBooterBSeriesInstance extends InstanceBase {
 
 		if (typeof this.checkFeedbacks === 'function') {
 			this.checkFeedbacks('outlet_rebooting')
+		}
+	}
+
+	/**
+	 * Start the blink timer for reboot visual feedback.
+	 * Safe to call multiple times - only creates one timer.
+	 */
+	_startBlinkTimer() {
+		if (this._blinkTimer) return // Already running
+
+		this._blinkTimer = setInterval(() => {
+			this._blinkPhase = !this._blinkPhase
+			if (typeof this.checkFeedbacks === 'function') {
+				this.checkFeedbacks('outlet_rebooting')
+			}
+		}, REBOOT_BLINK_INTERVAL_MS)
+	}
+
+	/**
+	 * Stop the blink timer for reboot visual feedback.
+	 */
+	_stopBlinkTimer() {
+		if (this._blinkTimer) {
+			clearInterval(this._blinkTimer)
+			this._blinkTimer = undefined
+			this._blinkPhase = false // Reset to consistent state
 		}
 	}
 
