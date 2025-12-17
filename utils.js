@@ -1,7 +1,17 @@
 /**
- * Protocol and parsing utilities for Synaccess netBooter B Series.
+ * utils.js
+ *
+ * Protocol helpers and validation utilities for the module.
+ * Hosts shared parsing/validation routines used by HTTP transport, polling,
+ * and action handlers to keep device interactions consistent.
  */
 
+/**
+ * Build a Basic Auth header from username/password.
+ * @param {string} username
+ * @param {string} password
+ * @returns {string}
+ */
 export function toBasicAuthHeader(username, password) {
 	const token = Buffer.from(`${username}:${password}`, 'utf8').toString('base64')
 	return `Basic ${token}`
@@ -9,6 +19,8 @@ export function toBasicAuthHeader(username, password) {
 
 /**
  * The embedded device is sensitive. Avoid percent-encoding; replace spaces with '+'.
+ * @param {string} cmd
+ * @returns {string}
  */
 export function normalizeCmd(cmd) {
 	return String(cmd || '').trim().replace(/ +/g, '+')

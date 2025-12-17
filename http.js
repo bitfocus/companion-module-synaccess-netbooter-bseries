@@ -1,13 +1,23 @@
-// http.js
+/**
+ * http.js
+ *
+ * Serialized HTTP client specialized for Synaccess netBooter B Series devices.
+ * Manages a shared keep-alive agent and command pacing to protect the
+ * embedded target while providing detailed logging for diagnostics.
+ */
 import http from 'node:http'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { normalizeCmd, toBasicAuthHeader } from './utils.js'
+/** @typedef {import('./main.js').SynaccessNetBooterBSeriesInstance} SynaccessNetBooterBSeriesInstance */
 
 /**
  * Lightweight HTTP client that serializes requests to the device.
  * Uses a single keep-alive agent to avoid connection buildup on embedded stacks.
  */
 export class SynaccessHttpClient {
+	/**
+	 * @param {SynaccessNetBooterBSeriesInstance} instance
+	 */
 	constructor(instance) {
 		this.instance = instance
 
@@ -18,19 +28,28 @@ export class SynaccessHttpClient {
 		this.resetAgent()
 	}
 
+	/**
+	 * Number of in-flight HTTP calls (for pacing/polling coordination).
+	 */
 	get pending() {
 		return this._pending
 	}
 
+	/**
+	 * Destroy the current keep-alive agent.
+	 */
 	destroy() {
 		try {
 			this._agent?.destroy?.()
 		} catch (e) {
-			// ignore
+			this.instance.log('error', `HTTP agent destroy error: ${e?.message || e}`)
 		}
 		this._agent = null
 	}
 
+	/**
+	 * Reset the HTTP agent to a fresh keep-alive instance.
+	 */
 	resetAgent() {
 		this.destroy()
 		this._agent = new http.Agent({
@@ -95,7 +114,8 @@ export class SynaccessHttpClient {
 			}
 
 			try {
-				return await new Promise((resolve, reject) => {
+				this.instance.log('debug', `HTTP GET ${path} (timeoutMs=${requestTimeoutMs})`)
+				const body = await new Promise((resolve, reject) => {
 					const req = http.request(opts, (res) => {
 						let data = ''
 						res.setEncoding('utf8')
@@ -119,6 +139,10 @@ export class SynaccessHttpClient {
 					req.on('error', reject)
 					req.end()
 				})
+				return body
+			} catch (err) {
+				this.instance.log('error', `HTTP GET failed for ${path}: ${err?.message || err}`)
+				throw err
 			} finally {
 				this._pending--
 			}

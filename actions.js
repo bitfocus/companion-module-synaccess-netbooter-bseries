@@ -1,7 +1,18 @@
-// actions.js
+/**
+ * actions.js
+ *
+ * Companion action definitions for the Synaccess netBooter B Series module.
+ * Exposes button/command callbacks that translate user intent into device
+ * HTTP commands, with validation and logging for maintainability.
+ */
 import { outletChoices, onOffChoices } from './choices.js'
 import { assertValidOutlet, assertActionOk } from './utils.js'
+/** @typedef {import('./main.js').SynaccessNetBooterBSeriesInstance} SynaccessNetBooterBSeriesInstance */
 
+/**
+ * Build action definitions using the provided module instance context.
+ * @param {SynaccessNetBooterBSeriesInstance} instance
+ */
 export function getActionDefinitions(instance) {
 	return {
 		set_outlet: {
@@ -15,8 +26,15 @@ export function getActionDefinitions(instance) {
 				const state = Number(action.options.state)
 				assertValidOutlet(outlet, instance.portCount)
 
-				const resp = await instance.http.get(`$A3 ${outlet} ${state}`)
-				assertActionOk(resp, 'Set Outlet')
+				instance.log('info', `Action: set outlet ${outlet} -> ${state === 1 ? 'ON' : 'OFF'}`)
+
+				try {
+					const resp = await instance.http.get(`$A3 ${outlet} ${state}`)
+					assertActionOk(resp, 'Set Outlet')
+				} catch (e) {
+					instance.log('error', `Set outlet ${outlet} failed: ${e?.message || e}`)
+					throw e
+				}
 
 				instance._needsStatusRefresh = true
 			},
@@ -32,8 +50,15 @@ export function getActionDefinitions(instance) {
 				const cur = instance.outletState?.[outlet - 1] ? 1 : 0
 				const next = cur ? 0 : 1
 
-				const resp = await instance.http.get(`$A3 ${outlet} ${next}`)
-				assertActionOk(resp, 'Toggle Outlet')
+				instance.log('info', `Action: toggle outlet ${outlet} (${cur ? 'ON' : 'OFF'} -> ${next ? 'ON' : 'OFF'})`)
+
+				try {
+					const resp = await instance.http.get(`$A3 ${outlet} ${next}`)
+					assertActionOk(resp, 'Toggle Outlet')
+				} catch (e) {
+					instance.log('error', `Toggle outlet ${outlet} failed: ${e?.message || e}`)
+					throw e
+				}
 
 				instance._needsStatusRefresh = true
 			},
@@ -62,11 +87,13 @@ export function getActionDefinitions(instance) {
 				// Capture config now (avoid changes mid-flight)
 				const rawRebootTimeout = Number(instance.config.rebootTimeoutMs)
 				const rebootTimeoutMs = Number.isFinite(rawRebootTimeout) && rawRebootTimeout >= 250 ? rawRebootTimeout : 30000
+				instance.log('info', `Action: reboot outlet ${outlet} with delay ${delayMs}ms and timeout ${rebootTimeoutMs}ms`)
 
 				try {
 					// OFF (this is the only awaited part)
 					assertActionOk(await instance.http.get(`$A3 ${outlet} 0`, { timeoutMs: rebootTimeoutMs }), 'Reboot OFF')
 				} catch (e) {
+					instance.log('error', `Reboot OFF failed for outlet ${outlet}: ${e?.message || e}`)
 					instance._rebootInProgress--
 					instance._unlockReboot(outlet)
 					throw e
@@ -87,6 +114,7 @@ export function getActionDefinitions(instance) {
 						// recover the agent on failure
 						instance.http.resetAgent()
 					} finally {
+						instance.log('info', `Reboot sequence completed for outlet ${outlet}`)
 						instance._rebootInProgress--
 						instance._unlockReboot(outlet)
 					}
@@ -100,8 +128,15 @@ export function getActionDefinitions(instance) {
 			callback: async (action) => {
 				const state = Number(action.options.state)
 
-				const resp = await instance.http.get(`$A7 ${state}`)
-				assertActionOk(resp, 'Set All Outlets ON/OFF')
+				instance.log('info', `Action: set all outlets -> ${state === 1 ? 'ON' : 'OFF'}`)
+
+				try {
+					const resp = await instance.http.get(`$A7 ${state}`)
+					assertActionOk(resp, 'Set All Outlets ON/OFF')
+				} catch (e) {
+					instance.log('error', `Set all outlets failed: ${e?.message || e}`)
+					throw e
+				}
 
 				// Keep consistent with reboot: don't hard-fail this action due to a status poll
 				instance._needsStatusRefresh = true
@@ -112,7 +147,13 @@ export function getActionDefinitions(instance) {
 			name: 'Refresh Status Now',
 			options: [],
 			callback: async () => {
-				await instance.refreshStatus()
+				instance.log('info', 'Action: manual status refresh requested')
+				try {
+					await instance.refreshStatus()
+				} catch (e) {
+					instance.log('error', `Manual status refresh failed: ${e?.message || e}`)
+					throw e
+				}
 			},
 		},
 	}

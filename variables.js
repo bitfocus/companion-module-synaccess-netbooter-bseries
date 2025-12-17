@@ -1,5 +1,10 @@
-// variables.js
-// Variable definitions + updates for Synaccess netBooter B Series
+/**
+ * variables.js
+ *
+ * Variable definitions and state update helpers for the module.
+ * Coordinates creation and periodic refreshing of Companion variables so
+ * feedbacks and bindings can reflect the latest device state.
+ */
 
 /**
  * Set/clear last error text and keep the variable in sync.

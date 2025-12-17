@@ -1,6 +1,15 @@
-// upgrade.js
+/**
+ * upgrade.js
+ *
+ * Companion upgrade scripts and defaults for the Synaccess module.
+ * Houses versioned migrations to keep configurations compatible across
+ * releases.
+ */
 
 export const upgradeScripts = [
+	/**
+	 * Upgrade script to seed defaults for v0.1.0.
+	 */
 	function upgradeTo_v0_1_0(_context, props) {
 		const result = {
 			updatedConfig: null,

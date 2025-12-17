@@ -1,4 +1,10 @@
-// feedbacks.js
+/**
+ * feedbacks.js
+ *
+ * Feedback definitions that reflect outlet states and connection health.
+ * Provides boolean feedbacks used to color and signal status on Companion
+ * buttons based on cached device state.
+ */
 import { combineRgb, InstanceStatus } from '@companion-module/base'
 import { outletChoices } from './choices.js'
 
