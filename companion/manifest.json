@@ -23,10 +23,10 @@
     "b-series"
   ],
   "description": "Control Synaccess netBooter B Series PDUs (NP-02B/NP-05B) via HTTP GET cmd.cgi (Basic Auth)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
-  "repository": "git+https://github.com/mccartyp/companion-module-synaccess-netbooter-bseries.git",
-  "bugs": "https://github.com/mccartyp/companion-module-synaccess-netbooter-bseries/issues",
+  "repository": "git+https://github.com/bitfocus/companion-module-synaccess-netbooter-bseries.git",
+  "bugs": "https://github.com/bitfocus/companion-module-synaccess-netbooter-bseries/issues",
   "maintainers": [
     {
       "name": "Patrick McCarty",
